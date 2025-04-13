@@ -32,19 +32,20 @@ A sample image is included in the `/images` folder for testing purposes. You may
 - Preserves the input folder structure when exporting
 - Fully offline operation; no internet connection required
 - All watermarked images are saved in `.png` format
+- Includes a user-friendly GUI for non-technical users
 
 ---
 
 ## Requirements
 
-### Python 3.6
+### Python 3.6+
 
-Ensure Python 3 is installed. You can download it from:
+Ensure Python 3 is installed. You can download it from:  
 https://www.python.org/downloads/
 
 ### Required Library: Pillow
 
-This tool uses the Pillow library for image processing. Install it using pip:
+Install the image-processing library using pip:
 
 ```bash
 pip3 install pillow
@@ -54,33 +55,36 @@ pip3 install pillow
 
 ## How to Use
 
-### Installation as CLI Tool
+### Option 1: Run the GUI
 
-If you're installing it using the provided `setup.py`, run:
+If you prefer using a graphical interface, simply run:
 
 ```bash
-pip3 install .
+python3 watermark_tool.py --gui
 ```
 
-Once installed, you can execute the tool anywhere using:
+This will launch a GUI where you can:
+- Select a **source folder** containing your images
+- Choose your **watermark image**
+- Optionally choose an **output folder**
+- Pick the **watermark position** (top left, center, bottom right, etc.)
+- Adjust the **margin** (padding from the edge)
+- Set the **scale** (how big the watermark should be)
+
+Once everything’s set, just click **"Start Watermarking"**, and the tool will process your images without freezing the interface.
+
+> 💡 Tip: If you leave the output folder blank, it will overwrite the images in place (with `.png` versions). Use a separate folder if you want to preserve originals.
+
+---
+
+### Option 2: Use the CLI
+
+If you prefer the command line, you can also use the tool that way.
+
+Run it directly as a script:
 
 ```bash
-watermarker <ImageDirectory> <WatermarkPath> [options]
-```
-### Uninstall the CLI Tool
-
-To remove the installed command-line version of this tool, run:
-
-```bash
-pip3 uninstall watermarker
-```
-
-### Run Without Installing
-
-Alternatively, run it directly as a script:
-
-```bash
-python3 -m watermarker <ImageDirectory> <WatermarkPath> [options]
+python3 watermark_tool.py <ImageDirectory> <WatermarkPath> [options]
 ```
 
 ---
@@ -90,11 +94,12 @@ python3 -m watermarker <ImageDirectory> <WatermarkPath> [options]
 | Argument       | Required | Description |
 |----------------|----------|-------------|
 | `source`       | Yes      | Path to the image directory (images are scanned recursively) |
-| `watermark`    | Yes      | Path to the watermark image (preferably a transparent PNG, e.g. `watermark-light.png` or `watermark-dark.png`) |
+| `watermark`    | Yes      | Path to the watermark image (preferably a transparent PNG, e.g. `watermark-light.png`) |
 | `--output`     | No       | Path to output directory. If not provided, images will be overwritten in-place |
 | `--location`   | No       | Position of watermark: `topleft`, `topright`, `bottomleft`, `bottomright`, or `center`. Default: `center` |
 | `--margin`     | No       | Number of pixels between the watermark and the edge of the image. Default: `0` |
 | `--scale`      | No       | Percentage of the image's shortest side to use as the watermark width. Default: `20` |
+| `--gui`        | No       | Launches the graphical interface (GUI) |
 
 ---
 
@@ -106,10 +111,9 @@ You can specify where the watermark should be placed on each image using the `--
 - `topright`: Top-right corner
 - `bottomleft`: Bottom-left corner
 - `bottomright`: Bottom-right corner
-- `center`: Center of the image (default if none specified)
+- `center`: Center of the image (default)
 
-Example usage:
-
+Example:
 ```bash
 --location bottomright
 ```
@@ -119,14 +123,14 @@ Example usage:
 ## Example Command
 
 ```bash
-python3 -m watermarker ./images ./watermark-light.png --location bottomright --output ./watermarked --margin 15 --scale 40
+python3 watermark_tool.py ./images ./watermark-light.png --location bottomright --output ./watermarked --margin 15 --scale 40
 ```
 
 This will:
 - Search `./images` for all `.jpg`, `.jpeg`, and `.png` images recursively
 - Add the watermark in the bottom right corner
 - Apply 15 pixels of padding between the watermark and the image edge
-- Scale the watermark to 25% of the image's shortest side
+- Scale the watermark to 40% of the image's shortest side
 - Save all processed images into the `./watermarked` directory
 - Preserve the folder structure
 
@@ -143,12 +147,7 @@ Input folder:
     └── vacation.png
 ```
 
-Running:
-```bash
-python3 -m watermarker ./images ./watermark-light.png --location bottomright --output ./watermarked --scale 40
-```
-
-Output folder:
+After running the tool:
 ```
 ./watermarked/
 ├── photo1.png
@@ -157,16 +156,16 @@ Output folder:
     └── vacation.png
 ```
 
-Each image in the output will have the watermark applied.
+Each image in the output will have the watermark applied in your selected position.
 
 ---
 
 ## Notes
 
-- Compatible with macOS, Linux, and Windows. On Windows, make sure paths are in the correct format (e.g. use `\` or raw strings).
-- For best results, use a `.png` watermark with a transparent background.
-- Use `watermark-light.png` for dark image backgrounds and `watermark-dark.png` for light image backgrounds to ensure visibility.
-- Always test with copies before applying watermarks to critical or original files.
+- Compatible with macOS, Linux, and Windows. On Windows, use correct path formats (e.g., double backslashes `\\` or raw strings).
+- For best results, use a transparent `.png` file as your watermark.
+- Use `watermark-light.png` on dark images and `watermark-dark.png` on light ones for better visibility.
+- Always test on copies of your images to avoid accidental loss or overwrite.
 
 ---
 
@@ -177,5 +176,3 @@ If you need assistance, want a new feature, or encounter an issue, please reach 
 **Tejas Tagra**  
 Email: [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au)  
 Phone: +61 6125 4265
-
----
