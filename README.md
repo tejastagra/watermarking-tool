@@ -1,98 +1,114 @@
-# 📸 Watermarker Tool by Sequeira Lab
+# Watermarker Tool
 
-This repository belongs to the **Sequeira Lab**.  
 This program was created by **Tejas Tagra (u7786686)**.  
-Do not modify this code or use it elsewhere without the written permission of the author.  
-Please contact [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au) for maintenance requests, bugs, or more info.
+Please contact [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au) for maintenance requests, bugs, or more information.
 
 ---
 
-## ⚡ About This Tool
+## About This Tool
 
-This is a Python-based watermarking tool built from scratch to help you apply a custom logo to batches of images inside a folder — including all subfolders. You can customize the logo’s position, size, and padding. You can also choose whether to overwrite the original images or output to a new folder, all while keeping the folder structure intact.
+This Python-based watermarking tool allows you to apply a custom watermark to multiple images within a directory, including its subdirectories. It is designed for batch processing and customization, making it ideal for professional or academic use where branded or identified images are necessary.
 
----
+You can:
+- Choose where the watermark should appear
+- Set the watermark's size relative to the image
+- Add optional margin (padding) from image edges
+- Save results in-place or in a separate output folder
+- Maintain original folder structure when exporting
+- Select the appropriate watermark style (`watermark-light.png` or `watermark-dark.png`) depending on the background brightness of your images
 
-## ✅ Features
-
-- Recursively scans folders and subfolders for images
-- Supports `.jpg`, `.jpeg`, and `.png` formats
-- Custom watermark placement: any corner or center
-- Logo scales proportionally to each image
-- Optional padding around the watermark
-- Maintains original folder structure if saving elsewhere
-- Lightweight and runs fully offline
+A sample image is included in the `/images` folder for testing purposes. You may safely delete this file without affecting the tool’s functionality.
 
 ---
 
-## ⚙️ Requirements
+## Features
 
-### Python 3.x
+- Recursively scans folders and subfolders for image files
+- Supports common image formats: `.jpg`, `.jpeg`, `.png`
+- Allows watermark placement in any corner or the center
+- Watermark resizes proportionally to image dimensions
+- Padding ensures the watermark doesn’t touch image edges
+- Option to overwrite original images or save to new directory
+- Preserves the input folder structure when exporting
+- Fully offline operation; no internet connection required
+- All watermarked images are saved in `.png` format
 
-Make sure Python is installed. If not:
+---
 
-👉 [Download Python](https://www.python.org/downloads/)
+## Requirements
 
-### Pillow (Python Imaging Library)
+### Python 3.6
 
-Install it via pip:
+Ensure Python 3 is installed. You can download it from:
+https://www.python.org/downloads/
+
+### Required Library: Pillow
+
+This tool uses the Pillow library for image processing. Install it using pip:
 
 ```bash
-pip install pillow
+pip3 install pillow
 ```
 
 ---
 
-## 🚀 How to Use
+## How to Use
 
-### 📦 Installation (Local CLI Tool)
+### Installation as CLI Tool
 
-If you're using the CLI version with `setup.py`, navigate to the root folder and install it:
+If you're installing it using the provided `setup.py`, run:
 
 ```bash
 pip3 install .
 ```
 
-Then you can run the tool anywhere using:
+Once installed, you can execute the tool anywhere using:
 
 ```bash
-watermarker <ImageDirectory> <LogoPath> [options]
+watermarker <ImageDirectory> <WatermarkPath> [options]
+```
+### Uninstall the CLI Tool
+
+To remove the installed command-line version of this tool, run:
+
+```bash
+pip3 uninstall watermarker
 ```
 
-### 🧪 Or, Run Manually
+### Run Without Installing
 
-If you prefer not to install:
+Alternatively, run it directly as a script:
 
 ```bash
-python3 -m watermarker <ImageDirectory> <LogoPath> [options]
+python3 -m watermarker <ImageDirectory> <WatermarkPath> [options]
 ```
 
 ---
 
-## 🔢 Command-Line Options
+## Command-Line Arguments
 
 | Argument       | Required | Description |
 |----------------|----------|-------------|
-| `source`       | ✅        | Path to the folder containing your images |
-| `logo`         | ✅        | Path to the watermark logo image (preferably PNG with transparency) |
-| `--output`     | ❌        | Output folder for watermarked images (preserves folder structure). If not set, overwrites originals |
-| `--location`   | ❌        | Watermark position. Default: `center` |
-| `--margin`     | ❌        | Padding in pixels around the logo. Default: `0` |
-| `--scale`      | ❌        | Logo size as percentage of the image’s shortest side. Default: `20` |
+| `source`       | Yes      | Path to the image directory (images are scanned recursively) |
+| `watermark`    | Yes      | Path to the watermark image (preferably a transparent PNG, e.g. `watermark-light.png` or `watermark-dark.png`) |
+| `--output`     | No       | Path to output directory. If not provided, images will be overwritten in-place |
+| `--location`   | No       | Position of watermark: `topleft`, `topright`, `bottomleft`, `bottomright`, or `center`. Default: `center` |
+| `--margin`     | No       | Number of pixels between the watermark and the edge of the image. Default: `0` |
+| `--scale`      | No       | Percentage of the image's shortest side to use as the watermark width. Default: `20` |
 
 ---
 
-## 🔍 Watermark Positions
+## Watermark Position Options
 
-You can place the watermark at any of the following positions:
+You can specify where the watermark should be placed on each image using the `--location` flag:
 
-- `topleft`
-- `topright`
-- `bottomleft`
-- `bottomright`
-- `center` *(default)*
+- `topleft`: Top-left corner
+- `topright`: Top-right corner
+- `bottomleft`: Bottom-left corner
+- `bottomright`: Bottom-right corner
+- `center`: Center of the image (default if none specified)
 
-Example:
+Example usage:
 
 ```bash
 --location bottomright
@@ -100,68 +116,66 @@ Example:
 
 ---
 
-## 💡 Example Usage
+## Example Command
 
 ```bash
-watermarker ./images ./logo-light.png --location bottomright --output ./watermarked --margin 15 --scale 25
+python3 -m watermarker ./images ./watermark-light.png --location bottomright --output ./watermarked --margin 15 --scale 40
 ```
 
 This will:
-
-- Recursively watermark all `.jpg`, `.jpeg`, and `.png` images in `./images`
-- Place the watermark at the bottom right with 15px margin
-- Scale the watermark to 25% of the image’s shorter side
-- Save everything inside `./watermarked/`, preserving original folder structure
+- Search `./images` for all `.jpg`, `.jpeg`, and `.png` images recursively
+- Add the watermark in the bottom right corner
+- Apply 15 pixels of padding between the watermark and the image edge
+- Scale the watermark to 25% of the image's shortest side
+- Save all processed images into the `./watermarked` directory
+- Preserve the folder structure
 
 ---
 
-## 📂 Folder Structure Example
+## Input and Output Folder Example
 
-Input:
-
+Input folder:
 ```
 ./images/
 ├── photo1.jpg
 ├── photo2.png
 └── album/
-    └── vacation.jpeg
+    └── vacation.png
 ```
 
-Command:
-
+Running:
 ```bash
-watermarker ./images ./logo.png --location bottomright --output ./watermarked --scale 25
+python3 -m watermarker ./images ./watermark-light.png --location bottomright --output ./watermarked --scale 40
 ```
 
-Output:
-
+Output folder:
 ```
 ./watermarked/
-├── photo1.jpg
+├── photo1.png
 ├── photo2.png
 └── album/
-    └── vacation.jpeg
+    └── vacation.png
 ```
 
-All with the watermark applied.
+Each image in the output will have the watermark applied.
 
 ---
 
-## ⚠️ Notes
+## Notes
 
-- Works on macOS, Linux, and Windows (though you may need to adjust path syntax on Windows).
-- Recommended logo format: `.png` with transparency.
-- For production use, test on copies of your images first.
+- Compatible with macOS, Linux, and Windows. On Windows, make sure paths are in the correct format (e.g. use `\` or raw strings).
+- For best results, use a `.png` watermark with a transparent background.
+- Use `watermark-light.png` for dark image backgrounds and `watermark-dark.png` for light image backgrounds to ensure visibility.
+- Always test with copies before applying watermarks to critical or original files.
 
 ---
 
-## 📬 Support
+## Support
 
-If something isn’t working or if you’d like a feature added, reach out directly:
+If you need assistance, want a new feature, or encounter an issue, please reach out to:
 
 **Tejas Tagra**  
-[tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au)  
-+61 6125 4265
+Email: [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au)  
+Phone: +61 6125 4265
 
 ---
-
