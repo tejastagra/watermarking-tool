@@ -138,7 +138,7 @@ def watermark_video(video_path, wm_light_path, wm_dark_path, output_dir, locatio
         print(f"Error processing video '{video_path}': {e}")
 
 # GUI Application class
-class SealOfSequeiraApp:
+class AquaMarkApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("AquaMark")
@@ -270,8 +270,9 @@ def run_cli():
     )
 
 # Entrypoint
+# Entrypoint
 if __name__ == '__main__':
-    if '--gui' in sys.argv:
-        SealOfSequeiraApp().run()
+    if '--gui' in sys.argv or len(sys.argv) == 1:
+        AquaMarkApp().run()
     else:
         run_cli()
