@@ -1,218 +1,267 @@
+# Corrected and unified AquaMark script
+# This version includes both CLI and GUI support without external module imports
+
 import os
+import sys
 import argparse
 import threading
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError, ImageStat
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter.ttk import Combobox
+import cv2
+import numpy as np
 
 """
-A single-file watermarking tool with both a CLI (command-line interface) and a basic Tkinter GUI.
-
-CLI usage example:
-    python3 watermark_tool.py <SourceDirectory> <WatermarkImagePath> [options]
-
-GUI usage:
-    python3 watermark_tool.py --gui
-
-The program outputs watermarked images as PNG.
+AquaMark - A watermarking tool with both CLI and GUI, now supports images and videos.
 """
 
-# Main image watermarking function
-def watermark_images(source_dir, watermark_file, output_dir=None, location='center', margin=0, size_ratio=20):
+# Utility functions
+def is_dark_background(image):
+    grayscale = image.convert("L")
+    stat = ImageStat.Stat(grayscale)
+    return stat.mean[0] < 128
+
+def is_video_file(filename):
+    return filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv'))
+
+def get_position_coordinates(location, img_w, img_h, wm_w, wm_h, margin):
+    return {
+        'Centre': ((img_w - wm_w) // 2, (img_h - wm_h) // 2),
+        'Top left': (margin, margin),
+        'Top right': (img_w - wm_w - margin, margin),
+        'Bottom left': (margin, img_h - wm_h - margin),
+        'Bottom right': (img_w - wm_w - margin, img_h - wm_h - margin)
+    }.get(location, (0, 0))
+
+# Image watermarking
+def watermark_images(source_dir, watermark_light, watermark_dark, output_dir=None, location='Centre', margin=15, size_ratio=40):
     supported_extensions = ('.jpg', '.jpeg', '.png')
-
-    # Load the watermark image
     try:
-        watermark_img = Image.open(watermark_file)
-    except UnidentifiedImageError:
-        print(f"Error: Unable to open watermark image at '{watermark_file}'. Please provide a valid image file.")
-        return
+        light_wm = Image.open(watermark_light)
+        dark_wm = Image.open(watermark_dark)
     except Exception as e:
-        print(f"Unexpected error loading watermark: {e}")
+        print(f"Error loading watermark images: {e}")
         return
 
-    # Extract alpha channel mask if it exists
-    watermark_mask = watermark_img.split()[3] if watermark_img.mode == 'RGBA' else None
+    light_mask = light_wm.split()[3] if light_wm.mode == 'RGBA' else None
+    dark_mask = dark_wm.split()[3] if dark_wm.mode == 'RGBA' else None
 
-    # Recursively walk through the source directory
     for folder_path, _, files in os.walk(source_dir):
         for file_name in files:
-            # Skip non-image files and the watermark file itself
-            if not file_name.lower().endswith(supported_extensions) or file_name == os.path.basename(watermark_file):
+            if is_video_file(file_name):
+                video_path = os.path.join(folder_path, file_name)
+                output_folder = os.path.join(output_dir or source_dir, os.path.relpath(folder_path, source_dir))
+                os.makedirs(output_folder, exist_ok=True)
+                watermark_video(video_path, watermark_light, watermark_dark, output_folder, location, margin, size_ratio)
+                continue
+
+            if not file_name.lower().endswith(supported_extensions) or file_name in [os.path.basename(watermark_light), os.path.basename(watermark_dark)]:
                 continue
 
             image_path = os.path.join(folder_path, file_name)
-
             try:
                 with Image.open(image_path) as img:
-                    # Resize watermark based on image size
+                    use_light = is_dark_background(img)
+                    wm_img = light_wm if use_light else dark_wm
+                    wm_mask = light_mask if use_light else dark_mask
+
                     img_w, img_h = img.size
                     target_wm_w = int(min(img_w, img_h) * size_ratio / 100)
-                    aspect_ratio = watermark_img.width / watermark_img.height
+                    aspect_ratio = wm_img.width / wm_img.height
                     target_wm_h = int(target_wm_w / aspect_ratio)
 
-                    resized_wm = watermark_img.resize((target_wm_w, target_wm_h))
-                    resized_mask = watermark_mask.resize((target_wm_w, target_wm_h)) if watermark_mask else None
+                    resized_wm = wm_img.resize((target_wm_w, target_wm_h))
+                    resized_mask = wm_mask.resize((target_wm_w, target_wm_h)) if wm_mask else None
 
-                    # Define position options
-                    positions = {
-                        'topleft': (margin, margin),
-                        'topright': (img_w - target_wm_w - margin, margin),
-                        'bottomleft': (margin, img_h - target_wm_h - margin),
-                        'bottomright': (img_w - target_wm_w - margin, img_h - target_wm_h - margin),
-                        'center': ((img_w - target_wm_w) // 2, (img_h - target_wm_h) // 2),
-                    }
-
-                    # Get coordinates to paste watermark
-                    pos_x, pos_y = positions.get(location, positions['center'])
+                    pos_x, pos_y = get_position_coordinates(location, img_w, img_h, target_wm_w, target_wm_h, margin)
                     img.paste(resized_wm, (pos_x, pos_y), resized_mask)
 
-                    # Create output directory, preserving structure
                     relative_path = os.path.relpath(folder_path, source_dir)
                     final_output_dir = os.path.join(output_dir or source_dir, relative_path)
                     os.makedirs(final_output_dir, exist_ok=True)
 
-                    # Always save as PNG
                     new_filename = os.path.splitext(file_name)[0] + ".png"
                     output_path = os.path.join(final_output_dir, new_filename)
                     img = img.convert("RGBA") if img.mode != "RGBA" else img
                     img.save(output_path, format="PNG")
-                    print(f"Watermarked: {output_path}")
-
-            except UnidentifiedImageError:
-                print(f"Skipped: '{image_path}' - Unsupported or corrupt image.")
+                    print(f"Watermarked image: {output_path}")
             except Exception as e:
-                print(f"Failed to process '{image_path}': {e}")
+                print(f"Failed to process image '{image_path}': {e}")
+    light_wm.close()
+    dark_wm.close()
 
-    watermark_img.close()
+# Video watermarking
+def watermark_video(video_path, wm_light_path, wm_dark_path, output_dir, location='Centre', margin=15, size_ratio=40):
+    try:
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            print(f"Could not open video: {video_path}")
+            return
 
-###########################
-# TKINTER GUI SECTION
-###########################
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        output_filename = os.path.splitext(os.path.basename(video_path))[0] + "_watermarked.mp4"
+        output_path = os.path.join(output_dir, output_filename)
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        wm_light = Image.open(wm_light_path)
+        wm_dark = Image.open(wm_dark_path)
 
-def browse_source():
-    path = filedialog.askdirectory()
-    if path:
-        source_entry.delete(0, tk.END)
-        source_entry.insert(0, path)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
+            pil_frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            use_light = is_dark_background(pil_frame)
+            wm = wm_light if use_light else wm_dark
 
-def browse_watermark():
-    path = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")])
-    if path:
-        watermark_entry.delete(0, tk.END)
-        watermark_entry.insert(0, path)
+            target_wm_w = int(min(width, height) * size_ratio / 100)
+            aspect_ratio = wm.width / wm.height
+            target_wm_h = int(target_wm_w / aspect_ratio)
+            wm_resized = wm.resize((target_wm_w, target_wm_h)).convert("RGBA")
 
+            pos_x, pos_y = get_position_coordinates(location, width, height, target_wm_w, target_wm_h, margin)
+            base = pil_frame.convert("RGBA")
+            base.paste(wm_resized, (pos_x, pos_y), wm_resized)
+            out_frame = cv2.cvtColor(np.array(base), cv2.COLOR_RGBA2BGR)
+            out.write(out_frame)
 
-def browse_output():
-    path = filedialog.askdirectory()
-    if path:
-        output_entry.delete(0, tk.END)
-        output_entry.insert(0, path)
+        cap.release()
+        out.release()
+        wm_light.close()
+        wm_dark.close()
+        print(f"Watermarked video saved to {output_path}")
+    except Exception as e:
+        print(f"Error processing video '{video_path}': {e}")
 
+# GUI Application class
+class SealOfSequeiraApp:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("AquaMark")
+        self.show_home()
 
-def start_watermarking_gui():
-    src = source_entry.get()
-    wm = watermark_entry.get()
-    out = output_entry.get()
-    pos = position_box.get()
-    margin_val = int(margin_scale.get())
-    scale_val = float(scale_scale.get())
+    def clear(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-    if not src or not wm:
-        messagebox.showerror("Missing Input", "Please specify both source folder and watermark file.")
-        return
+    def show_home(self):
+        self.clear()
+        tk.Label(self.root, text="Choose media type to watermark:", font=('Arial', 14)).pack(pady=20)
+        tk.Button(self.root, text="Watermark Images", width=30, command=self.show_image_gui).pack(pady=10)
+        tk.Button(self.root, text="Watermark Video", width=30, command=self.show_video_gui).pack(pady=10)
 
-    def run_in_bg():
-        watermark_images(
-            source_dir=src,
-            watermark_file=wm,
-            output_dir=out,
-            location=pos,
-            margin=margin_val,
-            size_ratio=scale_val
-        )
+    def show_image_gui(self):
+        self.clear()
+        self.build_gui(is_video=False)
 
-    # Run watermarking in a thread to prevent GUI freeze
-    threading.Thread(target=run_in_bg, daemon=True).start()
+    def show_video_gui(self):
+        self.clear()
+        self.build_gui(is_video=True)
 
+    def build_gui(self, is_video):
+        def browse(entry, is_file=True):
+            path = filedialog.askopenfilename() if is_file else filedialog.askdirectory()
+            if path:
+                entry.delete(0, tk.END)
+                entry.insert(0, path)
 
-def run_gui():
-    global source_entry, watermark_entry, output_entry, position_box, margin_scale, scale_scale
+        def start():
+            args = {
+                "src": src_entry.get(),
+                "wm_light": light_entry.get(),
+                "wm_dark": dark_entry.get(),
+                "out": out_entry.get(),
+                "pos": pos_box.get(),
+                "margin": int(margin_scale.get()),
+                "scale": float(scale_scale.get())
+            }
+            if not all(args.values()):
+                messagebox.showerror("Error", "Please fill in all fields.")
+                return
 
-    window = tk.Tk()
-    window.title("Watermarker Tool - GUI")
+            target_fn = watermark_video if is_video else watermark_images
+            threading.Thread(target=target_fn, args=(
+                args["src"], args["wm_light"], args["wm_dark"], args["out"],
+                args["pos"], args["margin"], args["scale"]
+            ), daemon=True).start()
 
-    tk.Label(window, text="Source Folder:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-    source_entry = tk.Entry(window, width=40)
-    source_entry.grid(row=0, column=1, padx=5, pady=5)
-    tk.Button(window, text="Browse", command=browse_source).grid(row=0, column=2, padx=5, pady=5)
+        tk.Button(self.root, text="← Back", command=self.show_home).grid(row=0, column=0, padx=10, pady=10)
+        tk.Label(self.root, text="Source File:" if is_video else "Source Folder:").grid(row=1, column=0, sticky='e')
+        src_entry = tk.Entry(self.root, width=40)
+        src_entry.grid(row=1, column=1)
+        tk.Button(self.root, text="Browse", command=lambda: browse(src_entry, is_file=is_video)).grid(row=1, column=2)
 
-    tk.Label(window, text="Watermark File:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
-    watermark_entry = tk.Entry(window, width=40)
-    watermark_entry.grid(row=1, column=1, padx=5, pady=5)
-    tk.Button(window, text="Browse", command=browse_watermark).grid(row=1, column=2, padx=5, pady=5)
+        tk.Label(self.root, text="Light Watermark:").grid(row=2, column=0, sticky='e')
+        light_entry = tk.Entry(self.root, width=40)
+        light_entry.grid(row=2, column=1)
+        tk.Button(self.root, text="Browse", command=lambda: browse(light_entry)).grid(row=2, column=2)
 
-    tk.Label(window, text="Output Folder:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
-    output_entry = tk.Entry(window, width=40)
-    output_entry.grid(row=2, column=1, padx=5, pady=5)
-    tk.Button(window, text="Browse", command=browse_output).grid(row=2, column=2, padx=5, pady=5)
+        tk.Label(self.root, text="Dark Watermark:").grid(row=3, column=0, sticky='e')
+        dark_entry = tk.Entry(self.root, width=40)
+        dark_entry.grid(row=3, column=1)
+        tk.Button(self.root, text="Browse", command=lambda: browse(dark_entry)).grid(row=3, column=2)
 
-    tk.Label(window, text="Watermark Position:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
-    position_box = Combobox(window, values=["center", "topleft", "topright", "bottomleft", "bottomright"])
-    position_box.set("center")
-    position_box.grid(row=3, column=1, padx=5, pady=5)
+        tk.Label(self.root, text="Output Folder:").grid(row=4, column=0, sticky='e')
+        out_entry = tk.Entry(self.root, width=40)
+        out_entry.grid(row=4, column=1)
+        tk.Button(self.root, text="Browse", command=lambda: browse(out_entry, is_file=False)).grid(row=4, column=2)
 
-    tk.Label(window, text="Margin (px):").grid(row=4, column=0, padx=5, pady=5, sticky="e")
-    margin_scale = tk.Scale(window, from_=0, to=100, orient=tk.HORIZONTAL)
-    margin_scale.grid(row=4, column=1, padx=5, pady=5)
+        tk.Label(self.root, text="Position:").grid(row=5, column=0, sticky='e')
+        pos_box = Combobox(self.root, values=["Centre", "Top left", "Top right", "Bottom left", "Bottom right"])
+        pos_box.set("Centre")
+        pos_box.grid(row=5, column=1)
 
-    tk.Label(window, text="Scale (%):").grid(row=5, column=0, padx=5, pady=5, sticky="e")
-    scale_scale = tk.Scale(window, from_=1, to=100, orient=tk.HORIZONTAL)
-    scale_scale.set(20)
-    scale_scale.grid(row=5, column=1, padx=5, pady=5)
+        tk.Label(self.root, text="Margin (px):").grid(row=6, column=0, sticky='e')
+        margin_scale = tk.Scale(self.root, from_=0, to=100, orient=tk.HORIZONTAL)
+        margin_scale.set(15)
+        margin_scale.grid(row=6, column=1)
 
-    tk.Button(window, text="Start Watermarking", command=start_watermarking_gui).grid(row=6, column=1, pady=10)
+        tk.Label(self.root, text="Scale (%):").grid(row=7, column=0, sticky='e')
+        scale_scale = tk.Scale(self.root, from_=1, to=100, orient=tk.HORIZONTAL)
+        scale_scale.set(40)
+        scale_scale.grid(row=7, column=1)
 
-    window.mainloop()
+        tk.Button(self.root, text="Start Watermarking", command=start).grid(row=8, column=1, pady=20)
 
-###########################
-# CLI Entry Point
-###########################
-def main():
-    parser = argparse.ArgumentParser(
-        description="Single-file Watermarker: run via CLI or GUI."
-    )
+    def run(self):
+        self.root.mainloop()
 
-    # If --gui is present, we skip CLI arguments and launch the GUI
-    parser.add_argument('--gui', action='store_true', help='Launch the GUI instead of running in CLI mode.')
-
-    # Only relevant if in CLI mode
-    parser.add_argument('source', nargs='?', default=None, help='Path to the folder containing your images.')
-    parser.add_argument('watermark', nargs='?', default=None, help='Path to the watermark image file.')
-    parser.add_argument('--output', default=None, help='Optional directory to save watermarked images. If not provided, overwrites originals.')
-    parser.add_argument('--location', choices=['topleft', 'topright', 'bottomleft', 'bottomright', 'center'],
-                        default='center', help='Where to place the watermark on each image. Default is center.')
-    parser.add_argument('--margin', type=int, default=0, help='Padding (in pixels) between the watermark and image edge. Default is 0.')
-    parser.add_argument('--scale', type=float, default=20, help="Size of the watermark as a percentage of the image's shortest side. Default is 20.")
-
+# CLI Mode
+def run_cli():
+    parser = argparse.ArgumentParser(description="AquaMark (Image + Video Watermarker): run via CLI.")
+    parser.add_argument('source', help='Folder containing images or videos.')
+    parser.add_argument('light', help='Path to light watermark image.')
+    parser.add_argument('dark', help='Path to dark watermark image.')
+    parser.add_argument('--output', default=None, help='Directory to save output files.')
+    parser.add_argument('--location', choices=['topleft', 'topright', 'bottomleft', 'bottomright', 'center'], default='center')
+    parser.add_argument('--margin', type=int, default=15)
+    parser.add_argument('--scale', type=float, default=40)
     args = parser.parse_args()
 
-    if args.gui:
-        run_gui()
-    else:
-        if not args.source or not args.watermark:
-            parser.print_help()
-            return
-        watermark_images(
-            source_dir=args.source,
-            watermark_file=args.watermark,
-            output_dir=args.output,
-            location=args.location,
-            margin=args.margin,
-            size_ratio=args.scale
-        )
+    pos_map = {
+        "topleft": "Top left",
+        "topright": "Top right",
+        "bottomleft": "Bottom left",
+        "bottomright": "Bottom right",
+        "center": "Centre"
+    }
+    watermark_images(
+        source_dir=args.source,
+        watermark_light=args.light,
+        watermark_dark=args.dark,
+        output_dir=args.output,
+        location=pos_map[args.location],
+        margin=args.margin,
+        size_ratio=args.scale
+    )
 
+# Entrypoint
 if __name__ == '__main__':
-    main()
+    if '--gui' in sys.argv:
+        SealOfSequeiraApp().run()
+    else:
+        run_cli()

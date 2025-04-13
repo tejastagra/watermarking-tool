@@ -1,142 +1,108 @@
-# Watermarker Tool
+# AquaMark: Image & Video Watermarking Tool
 
 This program was created by **Tejas Tagra (u7786686)**.  
 Please contact [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au) for maintenance requests, bugs, or more information.
 
 ---
-
 ## About This Tool
 
-This Python-based watermarking tool allows you to apply a custom watermark to multiple images within a directory, including its subdirectories. It is designed for batch processing and customization, making it ideal for professional or academic use where branded or identified images are necessary.
+**AquaMark** is a Python-based watermarking utility that supports both **images** and **videos**. Designed for simplicity and flexibility, it provides both a command-line interface (CLI) and a user-friendly graphical interface (GUI).
 
-You can:
-- Choose where the watermark should appear
-- Set the watermark's size relative to the image
-- Add optional margin (padding) from image edges
-- Save results in-place or in a separate output folder
-- Maintain original folder structure when exporting
-- Select the appropriate watermark style (`watermark-light.png` or `watermark-dark.png`) depending on the background brightness of your images
-
-A sample image is included in the `/images` folder for testing purposes. You may safely delete this file without affecting the tool’s functionality.
+With AquaMark, you can:
+- Automatically choose the light or dark watermark based on background brightness
+- Watermark images in bulk (including subfolders)
+- Watermark video files frame-by-frame
+- Customize watermark position, size, and margin
+- Choose between overwriting originals or saving to a separate output directory
 
 ---
 
-## Features
+## Key Features
 
-- Recursively scans folders and subfolders for image files
-- Supports common image formats: `.jpg`, `.jpeg`, `.png`
-- Allows watermark placement in any corner or the center
-- Watermark resizes proportionally to image dimensions
-- Padding ensures the watermark doesn’t touch image edges
-- Option to overwrite original images or save to new directory
-- Preserves the input folder structure when exporting
-- Fully offline operation; no internet connection required
-- All watermarked images are saved in `.png` format
-- Includes a user-friendly GUI for non-technical users
+- CLI and GUI support
+- Batch image watermarking
+- Video watermarking (frame-by-frame)
+- Automatic brightness detection (light/dark watermark)
+- Preserves original folder structure
+- Fully offline; no internet required
+- Supports `.jpg`, `.jpeg`, `.png`, and `.mp4`/`.avi`/`.mov`/`.mkv`
+- Output: `.png` for images, `.mp4` for videos
+- Built-in GUI navigation with back button and mode selection
 
 ---
 
 ## Requirements
 
-### Python 3.6+
+### Python 3.6 or later
+Download from: https://www.python.org/downloads/
 
-Ensure Python 3 is installed. You can download it from:  
-https://www.python.org/downloads/
-
-### Required Library: Pillow
-
-Install the image-processing library using pip:
+### Required Libraries:
+Install via pip:
 
 ```bash
-pip3 install pillow
+pip3 install pillow opencv-python
 ```
 
 ---
 
 ## How to Use
 
-### Option 1: Run the GUI
+### Option 1: GUI Mode
 
-If you prefer using a graphical interface, simply run:
+Run the following command to launch the graphical interface:
 
 ```bash
-python3 watermark_tool.py --gui
+python3 watermarker_tool.py --gui
 ```
 
-This will launch a GUI where you can:
-- Select a **source folder** containing your images
-- Choose your **watermark image**
-- Optionally choose an **output folder**
-- Pick the **watermark position** (top left, center, bottom right, etc.)
-- Adjust the **margin** (padding from the edge)
-- Set the **scale** (how big the watermark should be)
+The GUI will guide you through the process:
+- Choose to watermark **images** or a **video file**
+- Provide the source folder (for images) or file (for video)
+- Provide paths to the light and dark watermark images
+- Set the output directory
+- Choose the watermark position (Centre, Top left, Top right, Bottom left, Bottom right)
+- Adjust margin and scale
 
-Once everything’s set, just click **"Start Watermarking"**, and the tool will process your images without freezing the interface.
+You can return to the main menu at any time to switch between image and video modes.
 
-> 💡 Tip: If you leave the output folder blank, it will overwrite the images in place (with `.png` versions). Use a separate folder if you want to preserve originals.
+If no output directory is specified, AquaMark will save over the original images (converted to `.png`) or append `_watermarked.mp4` for videos.
 
 ---
 
-### Option 2: Use the CLI
+### Option 2: CLI Mode
 
-If you prefer the command line, you can also use the tool that way.
-
-Run it directly as a script:
+Run the script directly via command-line:
 
 ```bash
-python3 watermark_tool.py <ImageDirectory> <WatermarkPath> [options]
+python3 watermarker_tool.py <source> <light_wm> <dark_wm> [options]
 ```
+
+#### Example:
+```bash
+python3 watermarker_tool.py ./images ./light.png ./dark.png \
+  --output ./out --location bottomright --margin 15 --scale 40
+```
+
+This will recursively watermark all images and videos found in `./images`.
 
 ---
 
-## Command-Line Arguments
+## Command-Line Options
 
 | Argument       | Required | Description |
 |----------------|----------|-------------|
-| `source`       | Yes      | Path to the image directory (images are scanned recursively) |
-| `watermark`    | Yes      | Path to the watermark image (preferably a transparent PNG, e.g. `watermark-light.png`) |
-| `--output`     | No       | Path to output directory. If not provided, images will be overwritten in-place |
-| `--location`   | No       | Position of watermark: `topleft`, `topright`, `bottomleft`, `bottomright`, or `center`. Default: `center` |
-| `--margin`     | No       | Number of pixels between the watermark and the edge of the image. Default: `0` |
-| `--scale`      | No       | Percentage of the image's shortest side to use as the watermark width. Default: `20` |
-| `--gui`        | No       | Launches the graphical interface (GUI) |
+| `source`       | Yes      | Path to folder (images) or file (video) |
+| `light`        | Yes      | Path to light watermark (for dark backgrounds) |
+| `dark`         | Yes      | Path to dark watermark (for light backgrounds) |
+| `--output`     | No       | Output folder path (defaults to source if not specified) |
+| `--location`   | No       | Watermark position: `topleft`, `topright`, `bottomleft`, `bottomright`, `center` |
+| `--margin`     | No       | Padding in pixels from image edge (default: 15) |
+| `--scale`      | No       | Watermark size as a percentage of the image's shortest side (default: 40) |
+| `--gui`        | No       | Launch the graphical interface instead of CLI |
 
 ---
 
-## Watermark Position Options
-
-You can specify where the watermark should be placed on each image using the `--location` flag:
-
-- `topleft`: Top-left corner
-- `topright`: Top-right corner
-- `bottomleft`: Bottom-left corner
-- `bottomright`: Bottom-right corner
-- `center`: Center of the image (default)
-
-Example:
-```bash
---location bottomright
-```
-
----
-
-## Example Command
-
-```bash
-python3 watermark_tool.py ./images ./watermark-light.png --location bottomright --output ./watermarked --margin 15 --scale 40
-```
-
-This will:
-- Search `./images` for all `.jpg`, `.jpeg`, and `.png` images recursively
-- Add the watermark in the bottom right corner
-- Apply 15 pixels of padding between the watermark and the image edge
-- Scale the watermark to 40% of the image's shortest side
-- Save all processed images into the `./watermarked` directory
-- Preserve the folder structure
-
----
-
-## Input and Output Folder Example
+## Image Input and Output Example
 
 Input folder:
 ```
@@ -147,31 +113,44 @@ Input folder:
     └── vacation.png
 ```
 
-After running the tool:
+After watermarking:
 ```
-./watermarked/
+./out/
 ├── photo1.png
 ├── photo2.png
 └── album/
     └── vacation.png
 ```
 
-Each image in the output will have the watermark applied in your selected position.
+---
+
+## Video Input and Output Example
+
+Input file:
+```
+./videos/trailer.mov
+```
+
+After watermarking:
+```
+./out/trailer_watermarked.mp4
+```
 
 ---
 
 ## Notes
 
-- Compatible with macOS, Linux, and Windows. On Windows, use correct path formats (e.g., double backslashes `\\` or raw strings).
-- For best results, use a transparent `.png` file as your watermark.
-- Use `watermark-light.png` on dark images and `watermark-dark.png` on light ones for better visibility.
-- Always test on copies of your images to avoid accidental loss or overwrite.
+- Cross-platform: supports macOS, Windows, and Linux
+- Use transparent `.png` files for best watermark results
+- Automatic watermark selection based on background brightness
+- For video watermarking, AquaMark applies the watermark to each frame
+- Always back up your original files before overwriting
 
 ---
 
 ## Support
 
-If you need assistance, want a new feature, or encounter an issue, please reach out to:
+If you encounter any issues, require a feature, or want to suggest an improvement, please contact:
 
 **Tejas Tagra**  
 Email: [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au)  
