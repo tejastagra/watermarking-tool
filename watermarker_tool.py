@@ -3,6 +3,8 @@ import sys
 import argparse
 import threading
 from PIL import Image, UnidentifiedImageError, ImageStat
+import pillow_heif
+pillow_heif.register_heif_opener()
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter.ttk import Combobox, Progressbar
@@ -10,10 +12,9 @@ import cv2
 import numpy as np
 
 """
-AquaMark - A watermarking tool with both CLI and GUI, now supports images and videos.
+AquaMark - A watermarking tool with both CLI and GUI, now supports images and videos, including HEIC/HEIF input.
 """
 
-# Utility functions
 def is_dark_background(image):
     grayscale = image.convert("L")
     stat = ImageStat.Stat(grayscale)
@@ -31,9 +32,8 @@ def get_position_coordinates(location, img_w, img_h, wm_w, wm_h, margin):
         'Bottom right': (img_w - wm_w - margin, img_h - wm_h - margin)
     }.get(location, (0, 0))
 
-# Image watermarking
 def watermark_images(source_dir, watermark_light, watermark_dark, output_dir=None, location='Centre', margin=15, size_ratio=40, progress_callback=None):
-    supported_extensions = ('.jpg', '.jpeg', '.png')
+    supported_extensions = ('.jpg', '.jpeg', '.png', '.heic', '.heif')
     try:
         light_wm = Image.open(watermark_light)
         dark_wm = Image.open(watermark_dark)
@@ -50,44 +50,52 @@ def watermark_images(source_dir, watermark_light, watermark_dark, output_dir=Non
     ]
     total_files = len(all_files)
     processed = 0
+    failed_images = []
 
     for image_path in all_files:
         folder_path = os.path.dirname(image_path)
         file_name = os.path.basename(image_path)
         try:
-            with Image.open(image_path) as img:
-                use_light = is_dark_background(img)
-                wm_img = light_wm if use_light else dark_wm
-                wm_mask = light_mask if use_light else dark_mask
+            img = Image.open(image_path)
 
-                img_w, img_h = img.size
-                target_wm_w = int(min(img_w, img_h) * size_ratio / 100)
-                aspect_ratio = wm_img.width / wm_img.height
-                target_wm_h = int(target_wm_w / aspect_ratio)
+            use_light = is_dark_background(img)
+            wm_img = light_wm if use_light else dark_wm
+            wm_mask = light_mask if use_light else dark_mask
 
-                resized_wm = wm_img.resize((target_wm_w, target_wm_h))
-                resized_mask = wm_mask.resize((target_wm_w, target_wm_h)) if wm_mask else None
+            img_w, img_h = img.size
+            target_wm_w = int(min(img_w, img_h) * size_ratio / 100)
+            aspect_ratio = wm_img.width / wm_img.height
+            target_wm_h = int(target_wm_w / aspect_ratio)
 
-                pos_x, pos_y = get_position_coordinates(location, img_w, img_h, target_wm_w, target_wm_h, margin)
-                img.paste(resized_wm, (pos_x, pos_y), resized_mask)
+            resized_wm = wm_img.resize((target_wm_w, target_wm_h))
+            resized_mask = wm_mask.resize((target_wm_w, target_wm_h)) if wm_mask else None
 
-                relative_path = os.path.relpath(folder_path, source_dir)
-                final_output_dir = os.path.join(output_dir or source_dir, relative_path)
-                os.makedirs(final_output_dir, exist_ok=True)
+            pos_x, pos_y = get_position_coordinates(location, img_w, img_h, target_wm_w, target_wm_h, margin)
+            img.paste(resized_wm, (pos_x, pos_y), resized_mask)
 
-                new_filename = os.path.splitext(file_name)[0] + ".png"
-                output_path = os.path.join(final_output_dir, new_filename)
-                img = img.convert("RGBA") if img.mode != "RGBA" else img
-                img.save(output_path, format="PNG")
-                print(f"Watermarked image: {output_path}")
+            relative_path = os.path.relpath(folder_path, source_dir)
+            final_output_dir = os.path.join(output_dir or source_dir, relative_path)
+            os.makedirs(final_output_dir, exist_ok=True)
+
+            new_filename = os.path.splitext(file_name)[0] + ".png"
+            output_path = os.path.join(final_output_dir, new_filename)
+            img = img.convert("RGBA") if img.mode != "RGBA" else img
+            img.save(output_path, format="PNG")
+            print(f"Watermarked image: {output_path}")
         except Exception as e:
-            print(f"Failed to process image '{image_path}': {e}")
+            print(f"Failed to process image '{image_path}': {e.__class__.__name__}: {e}")
+            failed_images.append(image_path)
         processed += 1
         if progress_callback:
             progress_callback(processed / total_files * 100)
 
     light_wm.close()
     dark_wm.close()
+
+    if failed_images:
+        print("\n--- Failed Images ---")
+        for path in failed_images:
+            print(path)
 
 # Video watermarking
 def watermark_video(video_path, wm_light_path, wm_dark_path, output_dir, location='Centre', margin=15, size_ratio=40, progress_callback=None):
