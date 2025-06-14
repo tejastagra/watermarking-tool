@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 
 """
-AquaMark - A watermarking tool with both CLI and GUI, now supports images and videos, including HEIC/HEIF input.
+A watermarking tool with both CLI and GUI, now supports images and videos, including HEIC/HEIF input.
 """
 
 def is_dark_background(image):
@@ -146,10 +146,10 @@ def watermark_video(video_path, wm_light_path, wm_dark_path, output_dir, locatio
         print(f"Error processing video '{video_path}': {e}")
 
 # GUI Application class
-class AquaMarkApp:
+class WatermarkApp:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("AquaMark")
+        self.root.title(" Bulk Watermarking Tool by Tejas Tagra")
         self.show_home()
 
     def clear(self):
@@ -250,7 +250,7 @@ class AquaMarkApp:
 
 # CLI Mode
 def run_cli():
-    parser = argparse.ArgumentParser(description="AquaMark (Image + Video Watermarker): run via CLI.")
+    parser = argparse.ArgumentParser(description="Bulk Watermarking Tool (Image + Video Watermarker): run via CLI.")
     parser.add_argument('source', help='Folder containing images or videos.')
     parser.add_argument('light', help='Path to light watermark image.')
     parser.add_argument('dark', help='Path to dark watermark image.')
@@ -281,6 +281,6 @@ def run_cli():
 # Entrypoint
 if __name__ == '__main__':
     if '--gui' in sys.argv or len(sys.argv) == 1:
-        AquaMarkApp().run()
+        WatermarkApp().run()
     else:
         run_cli()
