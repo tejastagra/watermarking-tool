@@ -278,7 +278,6 @@ def run_cli():
     )
 
 # Entrypoint
-# Entrypoint
 if __name__ == '__main__':
     if '--gui' in sys.argv or len(sys.argv) == 1:
         WatermarkApp().run()
