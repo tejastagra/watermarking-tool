@@ -1,3 +1,42 @@
+### Watermarking Tool v1.2 – macOS and Windows Release
+
+**Release Date:** June 15, 2025
+**Build Types:**
+
+* macOS: Directory-based application (GUI app included in release)
+* Windows: Single-file executable (GUI app included in release)
+
+---
+
+#### What's New
+
+* Introduced standalone GUI apps for both macOS and Windows in the release section
+* macOS version now uses a directory-based build with `--windowed` for faster startup
+* Added Windows support with a PyInstaller-built `.exe` file
+* Full offline functionality on both platforms
+* Intelligent watermark selection (light/dark) based on image brightness
+* Support for image and video watermarking via GUI or CLI
+
+---
+
+#### Included in This Release
+
+* `WatermarkingTool-macOS.zip`: Contains the full application folder. Unzip and run `watermarker_tool` inside. GUI launches automatically.
+* `WatermarkingTool-Windows.exe`: Standalone executable for Windows. No installation required. GUI launches on double-click.
+
+---
+
+#### Notes
+
+* Do not separate files inside the macOS app folder. All contents are required for the app to function.
+* The Windows `.exe` may take slightly longer to launch on first run due to onefile packaging.
+* CLI functionality is also retained in the Python source code version.
+* For the original portable macOS build (with slower startup), see [v1.0.0](https://github.com/tejastagra/watermarking-tool/releases/tag/v1.0.0)
+
+---
+
+## Documentation
+
 # Watermarking Tool
 
 This program was created by **Tejas Tagra** under the employment of The Australian National University, Canberra.
@@ -11,39 +50,38 @@ Please contact [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au) for maint
 
 The **Watermarking Tool** is a Python-based utility for watermarking both **images** and **videos**. It supports a graphical interface (GUI) and a command-line interface (CLI) for flexibility and ease of use.
 
-### What it can do:
+### Key Features
 
-* Automatically choose a light or dark watermark based on background brightness
-* Watermark images in bulk (including subfolders)
-* Apply watermarks to video files frame-by-frame
-* Customize watermark position, size, and margins
-* Preserve original folder structures
-* Choose between overwriting or exporting to a different folder
+* Automatically selects light or dark watermark based on background brightness
+* Batch watermarking for image folders (including subfolders)
+* Video watermarking applied frame-by-frame
+* Customizable watermark position, size, and margins
+* Option to preserve original folder structure
+* Option to overwrite images or export to a different folder
+* Cross-platform support (macOS and Windows)
+* GUI available in latest releases (no Python required)
 
 ---
 
 ## Technical Specs
 
-* Fully offline; no internet required
-* Supports:
-
-  * Image formats: `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`
-  * Video formats: `.mp4`, `.avi`, `.mov`, `.mkv`
-* Output:
+* Works fully offline
+* Supported image formats: `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`
+* Supported video formats: `.mp4`, `.avi`, `.mov`, `.mkv`
+* Output formats:
 
   * Images: `.png`
   * Videos: `.mp4`
-* Cross-platform: macOS, Windows, Linux
-* Built-in GUI with back button and mode selection
+* Built-in GUI with back navigation, mode selection, and progress tracking
 
 ---
 
-## Requirements
+## Requirements (for Python source users)
 
 **Python 3.6 or later**
 Download: [https://www.python.org/downloads/](https://www.python.org/downloads/)
 
-To install dependencies:
+Install dependencies with:
 
 ```bash
 pip3 install -r requirements.txt
@@ -52,16 +90,23 @@ pip3 install -r requirements.txt
 Or manually:
 
 ```bash
-pip3 install pillow opencv-python
+pip3 install pillow opencv-python pillow-heif
 ```
 
 ---
 
 ## How to Use
 
-### GUI Mode
+### GUI Mode (included in release binaries)
 
-Launch with:
+Just unzip and run:
+
+* `watermarker_tool` on macOS
+* `WatermarkingTool-Windows.exe` on Windows
+
+No Python required for these versions.
+
+### GUI Mode (from Python source)
 
 ```bash
 python3 watermarker_tool.py --gui
@@ -70,13 +115,11 @@ python3 watermarker_tool.py --gui
 The GUI will prompt you to:
 
 * Select image folder or video file
-* Add watermark images (light/dark)
-* Choose output folder (optional)
-* Set watermark location, margin, and scale
+* Add watermark images (light and dark)
+* Choose an output folder (optional)
+* Set watermark position, margin, and scale
 
-If no output folder is selected, images will be overwritten (as `.png`), and videos will get `_watermarked.mp4`.
-
----
+If no output folder is selected, images are overwritten (as `.png`), and videos get `_watermarked.mp4`.
 
 ### CLI Mode
 
@@ -133,10 +176,10 @@ Output: ./out/trailer_watermarked.mp4
 
 ## Notes
 
-* Use transparent `.png` watermarks for best results
-* Always back up your originals
-* Automatically selects watermark type based on brightness
-* For videos, watermark is applied frame-by-frame
+* Use transparent `.png` watermarks for best visual results
+* Always back up your originals before batch processing
+* GUI provides progress feedback and is recommended for most users
+* CLI remains useful for automation, scripting, and batch workflows
 
 ---
 
@@ -146,4 +189,3 @@ For issues, feedback, or feature requests:
 
 **Tejas Tagra**
 Email: [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au)
-Phone: +61 6125 4265
