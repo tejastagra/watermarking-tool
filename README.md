@@ -1,6 +1,6 @@
 # Watermarking Tool
 
-This program was created by **Tejas Tagra (u7786686)** under the employment of The Australian National University, Canberra.
+This program was created by **Tejas Tagra** under the employment of The Australian National University, Canberra.
 Developed for the **Statistical Modelling & Marine Megafauna Movement at The Research School of Biology**.
 
 Please contact [tejas.tagra@anu.edu.au](mailto:tejas.tagra@anu.edu.au) for maintenance requests, bugs, or more information.
