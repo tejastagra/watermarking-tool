@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Distribution / packaging
+build/
+dist/
+*.spec
+*.egg-info/
+*.zip
+*.dmg
+*.pkg
+
+# PyInstaller output
+*.toc
+*.pyz
+*.pkg
+*.log
+*.html
+
+# macOS-specific
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Python virtual environment
+venv/
+.env
