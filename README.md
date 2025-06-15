@@ -31,7 +31,6 @@
 * Do not separate files inside the macOS app folder. All contents are required for the app to function.
 * The Windows `.exe` may take slightly longer to launch on first run due to onefile packaging.
 * CLI functionality is also retained in the Python source code version.
-* For the original portable macOS build (with slower startup), see [v1.0.0](https://github.com/tejastagra/watermarking-tool/releases/tag/v1.0.0)
 
 ---
 
